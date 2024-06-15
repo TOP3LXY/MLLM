@@ -54,7 +54,7 @@ def builde2tensor(processor:AutoProcessor, q_text:str, a_text:str, image_path:Pa
     
     answer = processor.tokenizer(
         a_text,
-        return_tensor='pt',
+        return_tensors='pt',
         padding='longest',
         truncation=True,
     )["input_ids"]
@@ -130,9 +130,6 @@ class TrainLLaVAModelCollator:
             "pixel_values":final_pixel_values,
             "attention_mask":attention_mask,
         }
-
-
-
 
 
 
