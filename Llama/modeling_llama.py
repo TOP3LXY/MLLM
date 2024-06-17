@@ -11,11 +11,15 @@ class LlamaConfig(PretrainedConfig):
         hidden_size=4096,
         num_heads=32,
         num_hidden_layer=32,
-        attention_bias=False,
-        intermediate_size=11008,    
+        intermediate_size=11008,
+        attention_bias=False,    
         mlp_bias=False, 
         vocab_size=32000, 
-        rsm_norm_eps=1e-6,  
+        rsm_norm_eps=1e-6, 
+        pad_token_id=None,
+        bos_token_id=1,
+        eos_token_id=2,
+        tie_word_embeddings=False,
         **kwargs,
     ):
         self.hidden_size = hidden_size
@@ -27,7 +31,13 @@ class LlamaConfig(PretrainedConfig):
         self.vocab_size = vocab_size
         self.num_hidden_layer = num_hidden_layer
 
-        super().__init__()
+        super().__init__(
+            pad_token_id=pad_token_id,
+            bos_token_id=bos_token_id,
+            eos_token_id=eos_token_id,
+            tie_word_embeddings=tie_word_embeddings,
+            **kwargs,
+        )
 
 
 class LlamaRMSNorm(nn.Module):
