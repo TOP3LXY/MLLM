@@ -43,13 +43,13 @@ class LlamaConfig(PretrainedConfig):
 class LlamaRMSNorm(nn.Module):
     def __init__(self, hidden_size, eps=1e-6) -> None:
         super().__init__()
-        self.weight = nn.Parameter(hidden_size)
+        self.weight = nn.Parameter(torch.ones(hidden_size))
         self.variance_epsilon = eps
 
     def forward(self, x):
         input_dtype = x.dtype
         x = x.to(torch.float32)
-        variance = x.pow(2).mean(-1, keep_dim=True)
+        variance = x.pow(2).mean(-1, keepdim=True)
         out = x*torch.rsqrt(variance+self.variance_epsilon)*self.weight
         out = out.to(input_dtype)
 
@@ -155,4 +155,41 @@ class LlamaModel(PreTrainedModel):
         out_states = self.norm(hidden_states)
 
         return out_states
+
+
+
+class LlamaForSequenceClassification(PreTrainedModel):
+    def __init__(self, config: LlamaConfig):
+        super().__init__(config)
+        self.num_labels = config.num_labels
+        self.model = LlamaModel(config)
+        self.score = nn.Linear(config.hidden_size, self.num_labels, bias=False)
+
+    def forward(self, input_ids, labels=None):
+
+        hidden_states = self.model(input_ids)
+        logits = self.score(hidden_states)
+
+        batch_size = input_ids.shape[0]
+
+        if batch_size != 1 and self.config.pad_token_id is None:
+            raise ValueError("Cannot handle batch sizes > 1 if no padding token is defined.")
+        if self.config.pad_token_id is None:
+            sequence_lengths = -1
+        else:
+            # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
+            sequence_lengths = torch.eq(input_ids, self.config.pad_token_id).int().argmax(-1) - 1
+            sequence_lengths = sequence_lengths % input_ids.shape[-1]
+            sequence_lengths = sequence_lengths.to(logits.device)
             
+
+        pooled_logits = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
+
+
+
+        loss = None
+        if labels is not None:
+            loss_f = nn.CrossEntropyLoss()
+            loss = loss_f(pooled_logits.view(-1, self.num_labels), labels.view(-1))
+
+        return pooled_logits, loss
