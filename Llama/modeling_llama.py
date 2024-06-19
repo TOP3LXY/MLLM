@@ -73,6 +73,9 @@ class LlamaAttention(nn.Module):
         self.v_proj = nn.Linear(
             self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias
         )
+        self.o_proj = nn.Linear(
+            self.hidden_size, self.hidden_size, bias=config.attention_bias
+        )
 
     def forward(self, hidden_states):
         batch, q_len, _ = hidden_states.size()
@@ -92,7 +95,8 @@ class LlamaAttention(nn.Module):
 
         output_states = output_states.transpose(1, 2).contiguous()
         output_states = output_states.view(batch, q_len, -1)
-
+        output_states = self.o_proj(output_states)
+        
         return output_states, attn_weights
 
 
