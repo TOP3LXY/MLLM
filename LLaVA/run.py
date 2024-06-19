@@ -70,7 +70,7 @@ def load_model_processor(modelargs: ModelArguments):
 
 def train():
     parser = transformers.HfArgumentParser(
-        ModelArguments, DataArguments, TrainingArguments
+        (ModelArguments, DataArguments, TrainingArguments)
     )
     modelargs, dataargs, trainargs = parser.parse_args_into_dataclasses
     model, processor = load_model_processor(modelargs)
